@@ -2,12 +2,15 @@ import React, { useEffect, useRef, useState } from "react";
 import { io } from "socket.io-client";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useTheme } from "../context/ThemeContext";
+import DarkModeToggle from "./DarkModeToggle";
 import Peer from "peerjs";
 
 const Room = () => {
   const { roomId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { isDarkMode } = useTheme();
   const videoGrid = useRef();
 
   // State management
@@ -351,7 +354,8 @@ const Room = () => {
       ]);
     });
 
-    socket.on("user-joined", (username) => {
+    socket.on("user-joined", (userData) => {
+      const username = userData.username || userData;
       setChatMessages((prev) => [
         ...prev,
         {
@@ -360,13 +364,38 @@ const Room = () => {
           isSystem: true,
         },
       ]);
+      showNotification(`${username} joined the room`, "success");
     });
 
-    socket.on("user-left", (username) => {
+    socket.on("user-left", (userData) => {
+      const username = userData.username || userData;
       setChatMessages((prev) => [
         ...prev,
         {
           message: `${username} left the room`,
+          username: "System",
+          isSystem: true,
+        },
+      ]);
+      showNotification(`${username} left the room`, "error");
+    });
+
+    socket.on("user-logged-in", (username) => {
+      setChatMessages((prev) => [
+        ...prev,
+        {
+          message: `${username} logged in`,
+          username: "System",
+          isSystem: true,
+        },
+      ]);
+    });
+
+    socket.on("user-logged-out", (username) => {
+      setChatMessages((prev) => [
+        ...prev,
+        {
+          message: `${username} logged out`,
           username: "System",
           isSystem: true,
         },
@@ -610,49 +639,109 @@ const Room = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-purple-700 flex items-center justify-center text-white">
-        <div className="bg-black/80 text-white p-5 rounded-lg text-center z-50">
-          <h3 className="mb-3">Connecting to Room...</h3>
+      <div
+        className={`min-h-screen flex items-center justify-center transition-all duration-300 ${
+          isDarkMode
+            ? "bg-gradient-to-br from-gray-900 via-purple-900 to-indigo-900 text-white"
+            : "bg-white text-gray-800"
+        }`}
+      >
+        <div
+          className={`p-5 rounded-lg text-center z-50 backdrop-blur-md border ${
+            isDarkMode
+              ? "bg-black/80 border-white/20 text-white"
+              : "bg-gray-100/90 border-gray-300 text-gray-800"
+          }`}
+        >
+          <h3 className="mb-3 text-lg font-semibold">Connecting to Room...</h3>
           <p className="mb-5">
             Please allow camera/microphone access when prompted
           </p>
-          <div className="text-2xl">⏳</div>
+          <div
+            className={`animate-spin rounded-full h-8 w-8 border-4 mx-auto ${
+              isDarkMode
+                ? "border-white/30 border-t-white"
+                : "border-gray-300 border-t-gray-600"
+            }`}
+          ></div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="font-inter bg-gradient-to-br from-indigo-500 via-purple-500 to-purple-700 h-screen overflow-hidden text-white flex flex-col md:flex-row">
+    <div
+      className={`font-inter h-screen overflow-hidden flex flex-col md:flex-row transition-all duration-300 ${
+        isDarkMode
+          ? "bg-gradient-to-br from-gray-900 via-purple-900 to-indigo-900 text-white"
+          : "bg-white text-gray-800"
+      }`}
+    >
       <div className="flex-1 flex flex-col p-3 md:p-5">
-        <div className="flex flex-col md:flex-row justify-between items-center mb-5 bg-white/10 px-3 py-2 md:px-5 md:py-4 rounded-xl backdrop-blur-md border border-white/20">
-          <div className="room-info mb-2 md:mb-0">
+        <div
+          className={`flex flex-col lg:flex-row justify-between items-center mb-5 px-3 py-2 md:px-5 md:py-4 rounded-xl backdrop-blur-md border transition-all duration-300 ${
+            isDarkMode
+              ? "bg-white/10 border-white/20"
+              : "bg-gray-100/80 border-gray-200"
+          }`}
+        >
+          <div className="room-info mb-3 lg:mb-0">
             <h1 className="text-lg md:text-2xl font-semibold mb-1">
-              <i className="fas fa-video mr-2"></i> Zoom Clone
+              <i
+                className={`fas fa-video mr-2 ${
+                  isDarkMode ? "text-green-400" : "text-indigo-600"
+                }`}
+              ></i>
+              Video Call App
             </h1>
-            <div className="text-xs md:text-sm opacity-80 font-mono">
+            <div
+              className={`text-xs md:text-sm font-mono ${
+                isDarkMode ? "text-white/80" : "text-gray-600"
+              }`}
+            >
               Room ID: {roomId}
             </div>
           </div>
-          <div className="flex items-center gap-2 text-xs md:text-sm opacity-90 mb-2 md:mb-0">
-            <i className="fas fa-users"></i>
-            <span>{participantCount}</span> participants
+
+          <div className="flex items-center gap-3 mb-3 lg:mb-0">
+            <div
+              className={`flex items-center gap-2 text-xs md:text-sm ${
+                isDarkMode ? "text-white/90" : "text-gray-600"
+              }`}
+            >
+              <i className="fas fa-users"></i>
+              <span>{participantCount}</span> participants
+            </div>
+            <DarkModeToggle className="hidden sm:flex" />
           </div>
-          <button
-            className="bg-white/20 border border-white/30 text-white px-3 py-2 md:px-4 md:py-2 rounded-lg cursor-pointer text-xs md:text-sm transition-all duration-300 hover:bg-white/30 hover:-translate-y-0.5 flex items-center gap-2"
-            onClick={copyRoomLink}
-          >
-            <i className="fas fa-copy"></i>
-            <span className="hidden sm:inline">Copy Link</span>
-          </button>
+
+          <div className="flex items-center gap-2">
+            <DarkModeToggle className="sm:hidden" />
+            <button
+              className={`border px-3 py-2 md:px-4 md:py-2 rounded-lg cursor-pointer text-xs md:text-sm 
+                transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-2 ${
+                  isDarkMode
+                    ? "bg-white/20 border-white/30 text-white hover:bg-white/30"
+                    : "bg-indigo-100 border-indigo-300 text-indigo-700 hover:bg-indigo-200"
+                }`}
+              onClick={copyRoomLink}
+            >
+              <i className="fas fa-copy"></i>
+              <span className="hidden sm:inline">Copy Link</span>
+            </button>
+          </div>
         </div>
 
         <div
           ref={videoGrid}
-          className="flex-1 grid grid-cols-1 md:grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-3 md:gap-5 py-3 md:py-5 overflow-y-auto content-start"
+          className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-3 md:gap-5 py-3 md:py-5 overflow-y-auto content-start"
         >
           {participantCount === 0 && (
-            <div className="flex flex-col items-center justify-center h-full text-center opacity-70 col-span-full">
+            <div
+              className={`flex flex-col items-center justify-center h-full text-center col-span-full ${
+                isDarkMode ? "text-white/70" : "text-gray-500"
+              }`}
+            >
               <i className="fas fa-video-slash text-3xl md:text-5xl mb-3 md:mb-5 opacity-50"></i>
               <h3 className="text-lg md:text-2xl mb-2 md:mb-3 font-medium">
                 Waiting for participants...
@@ -667,16 +756,32 @@ const Room = () => {
 
       {/* Chat Section */}
       <div
-        className={`w-full md:w-80 fixed md:relative top-0 right-0 h-full bg-white/10 backdrop-blur-md border-l border-white/20 flex flex-col transform transition-transform duration-300 z-50 ${
-          isChatOpen ? "translate-x-0" : "translate-x-full"
-        }`}
+        className={`w-full md:w-80 xl:w-96 fixed md:relative top-0 right-0 h-full backdrop-blur-md border-l flex flex-col transform transition-transform duration-300 z-50 ${
+          isDarkMode
+            ? "bg-white/10 border-white/20"
+            : "bg-gray-100/90 border-gray-200"
+        } ${isChatOpen ? "translate-x-0" : "translate-x-full"}`}
       >
-        <div className="p-4 md:p-5 border-b border-white/20 flex justify-between items-center">
+        <div
+          className={`p-4 md:p-5 border-b flex justify-between items-center ${
+            isDarkMode ? "border-white/20" : "border-gray-200"
+          }`}
+        >
           <h3 className="text-base md:text-lg font-semibold">
-            <i className="fas fa-comments mr-2"></i> Chat
+            <i
+              className={`fas fa-comments mr-2 ${
+                isDarkMode ? "text-green-400" : "text-indigo-600"
+              }`}
+            ></i>
+            Chat
           </h3>
           <button
-            className="bg-transparent border-0 text-white text-lg md:text-xl cursor-pointer p-1 rounded-full transition-all duration-300 hover:bg-white/10"
+            className={`bg-transparent border-0 text-lg md:text-xl cursor-pointer p-1 rounded-full 
+              transition-all duration-300 ${
+                isDarkMode
+                  ? "text-white hover:bg-white/10"
+                  : "text-gray-600 hover:bg-gray-200"
+              }`}
             onClick={() => setIsChatOpen(false)}
           >
             <i className="fas fa-times"></i>
@@ -686,19 +791,29 @@ const Room = () => {
           {chatMessages.map((msg, index) => (
             <div
               key={index}
-              className={`p-2 md:p-3 rounded-xl text-xs md:text-sm max-w-[80%] break-words ${
+              className={`p-2 md:p-3 rounded-xl text-xs md:text-sm max-w-[80%] break-words transition-all duration-300 ${
                 msg.isOwn
-                  ? "bg-green-400 self-end"
+                  ? isDarkMode
+                    ? "bg-green-400 text-white self-end"
+                    : "bg-indigo-600 text-white self-end"
                   : msg.isSystem
-                  ? "bg-white/5 italic text-center self-center max-w-full"
-                  : "bg-white/10"
+                  ? isDarkMode
+                    ? "bg-white/5 italic text-center self-center max-w-full text-green-300"
+                    : "bg-gray-200 italic text-center self-center max-w-full text-gray-600"
+                  : isDarkMode
+                  ? "bg-white/10 text-white"
+                  : "bg-gray-200 text-gray-800"
               }`}
             >
               {msg.isSystem ? msg.message : `${msg.username}: ${msg.message}`}
             </div>
           ))}
         </div>
-        <div className="p-4 md:p-5 border-t border-white/20">
+        <div
+          className={`p-4 md:p-5 border-t ${
+            isDarkMode ? "border-white/20" : "border-gray-200"
+          }`}
+        >
           <div className="flex gap-2 md:gap-3">
             <input
               type="text"
@@ -707,11 +822,21 @@ const Room = () => {
               onChange={(e) => setNewMessage(e.target.value)}
               onKeyPress={handleKeyPress}
               maxLength={500}
-              className="flex-1 bg-white/10 border border-white/20 text-white px-3 py-2 md:px-4 md:py-3 rounded-2xl md:rounded-3xl text-xs md:text-sm outline-none placeholder-white/60"
+              className={`flex-1 border px-3 py-2 md:px-4 md:py-3 rounded-2xl md:rounded-3xl text-xs md:text-sm outline-none 
+                transition-all duration-300 focus:ring-2 ${
+                  isDarkMode
+                    ? "bg-white/10 border-white/20 text-white placeholder-white/60 focus:border-white/40 focus:ring-white/20"
+                    : "bg-white border-gray-300 text-gray-800 placeholder-gray-400 focus:border-indigo-500 focus:ring-indigo-200"
+                }`}
             />
             <button
               onClick={sendMessage}
-              className="bg-green-400 border-0 text-white w-8 h-8 md:w-10 md:h-10 rounded-full cursor-pointer flex items-center justify-center transition-all duration-300 hover:bg-green-500 hover:scale-105"
+              className={`border-0 w-8 h-8 md:w-10 md:h-10 rounded-full cursor-pointer flex items-center justify-center 
+                transition-all duration-300 hover:scale-105 ${
+                  isDarkMode
+                    ? "bg-green-400 text-white hover:bg-green-500"
+                    : "bg-indigo-600 text-white hover:bg-indigo-700"
+                }`}
             >
               <i className="fas fa-paper-plane text-xs md:text-sm"></i>
             </button>
@@ -720,26 +845,42 @@ const Room = () => {
       </div>
 
       {/* Main Controls */}
-      <div className="fixed bottom-5 md:bottom-8 left-1/2 -translate-x-1/2 flex gap-2 md:gap-4 bg-black/80 px-4 py-2 md:px-6 md:py-4 rounded-full backdrop-blur-xl border border-white/10 shadow-lg shadow-black/30 z-50">
+      <div
+        className={`fixed bottom-5 md:bottom-8 left-1/2 -translate-x-1/2 flex gap-2 md:gap-4 
+        px-4 py-2 md:px-6 md:py-4 rounded-full backdrop-blur-xl border shadow-lg z-50 transition-all duration-300 ${
+          isDarkMode
+            ? "bg-black/80 border-white/10 shadow-black/30"
+            : "bg-white/90 border-gray-300 shadow-gray-400/30"
+        }`}
+      >
         <button
-          className={`w-10 h-10 md:w-12 md:h-12 rounded-full cursor-pointer flex items-center justify-center text-sm md:text-lg transition-all duration-300 hover:scale-105 border ${
-            !isVideoEnabled
-              ? "bg-red-500 border-red-500 hover:bg-red-600"
-              : "bg-white/10 border-white/20 hover:bg-white/20"
-          }`}
+          className={`w-10 h-10 md:w-12 md:h-12 rounded-full cursor-pointer flex items-center justify-center text-sm md:text-lg 
+            transition-all duration-300 hover:scale-105 border ${
+              !isVideoEnabled
+                ? "bg-red-500 border-red-500 hover:bg-red-600 text-white"
+                : isDarkMode
+                ? "bg-white/10 border-white/20 hover:bg-white/20 text-white"
+                : "bg-gray-100 border-gray-300 hover:bg-gray-200 text-gray-700"
+            }`}
           onClick={toggleVideo}
+          title={isVideoEnabled ? "Turn off camera" : "Turn on camera"}
         >
           <i
             className={`fas ${isVideoEnabled ? "fa-video" : "fa-video-slash"}`}
           ></i>
         </button>
+
         <button
-          className={`w-10 h-10 md:w-12 md:h-12 rounded-full cursor-pointer flex items-center justify-center text-sm md:text-lg transition-all duration-300 hover:scale-105 border ${
-            !isAudioEnabled
-              ? "bg-red-500 border-red-500 hover:bg-red-600"
-              : "bg-white/10 border-white/20 hover:bg-white/20"
-          }`}
+          className={`w-10 h-10 md:w-12 md:h-12 rounded-full cursor-pointer flex items-center justify-center text-sm md:text-lg 
+            transition-all duration-300 hover:scale-105 border ${
+              !isAudioEnabled
+                ? "bg-red-500 border-red-500 hover:bg-red-600 text-white"
+                : isDarkMode
+                ? "bg-white/10 border-white/20 hover:bg-white/20 text-white"
+                : "bg-gray-100 border-gray-300 hover:bg-gray-200 text-gray-700"
+            }`}
           onClick={toggleAudio}
+          title={isAudioEnabled ? "Mute microphone" : "Unmute microphone"}
         >
           <i
             className={`fas ${
@@ -747,25 +888,41 @@ const Room = () => {
             }`}
           ></i>
         </button>
+
         <button
-          className={`w-10 h-10 md:w-12 md:h-12 rounded-full cursor-pointer flex items-center justify-center text-sm md:text-lg transition-all duration-300 hover:scale-105 border ${
-            isScreenSharing
-              ? "bg-green-400 border-green-400 hover:bg-green-500"
-              : "bg-white/10 border-white/20 hover:bg-white/20"
-          }`}
+          className={`w-10 h-10 md:w-12 md:h-12 rounded-full cursor-pointer flex items-center justify-center text-sm md:text-lg 
+            transition-all duration-300 hover:scale-105 border ${
+              isScreenSharing
+                ? isDarkMode
+                  ? "bg-green-400 border-green-400 hover:bg-green-500 text-white"
+                  : "bg-indigo-600 border-indigo-600 hover:bg-indigo-700 text-white"
+                : isDarkMode
+                ? "bg-white/10 border-white/20 hover:bg-white/20 text-white"
+                : "bg-gray-100 border-gray-300 hover:bg-gray-200 text-gray-700"
+            }`}
           onClick={toggleScreenShare}
+          title={isScreenSharing ? "Stop sharing screen" : "Share screen"}
         >
           <i className="fas fa-desktop"></i>
         </button>
+
         <button
-          className="bg-white/10 border border-white/20 text-white w-10 h-10 md:w-12 md:h-12 rounded-full cursor-pointer flex items-center justify-center text-sm md:text-lg transition-all duration-300 hover:bg-white/20 hover:scale-105"
+          className={`w-10 h-10 md:w-12 md:h-12 rounded-full cursor-pointer flex items-center justify-center text-sm md:text-lg 
+            transition-all duration-300 hover:scale-105 border ${
+              isDarkMode
+                ? "bg-white/10 border-white/20 text-white hover:bg-white/20"
+                : "bg-gray-100 border-gray-300 text-gray-700 hover:bg-gray-200"
+            }`}
           onClick={() => setIsChatOpen(!isChatOpen)}
+          title={isChatOpen ? "Close chat" : "Open chat"}
         >
           <i className="fas fa-comments"></i>
         </button>
+
         <button
           className="bg-red-500 border border-red-500 text-white w-10 h-10 md:w-12 md:h-12 rounded-full cursor-pointer flex items-center justify-center text-sm md:text-lg transition-all duration-300 hover:bg-red-600 hover:scale-105"
           onClick={leaveRoom}
+          title="Leave room"
         >
           <i className="fas fa-phone-slash"></i>
         </button>
@@ -774,10 +931,18 @@ const Room = () => {
       {/* Notification */}
       {notification.show && (
         <div
-          className={`fixed top-5 right-5 bg-black/80 text-white px-4 py-3 md:px-5 md:py-4 rounded-lg backdrop-blur-md border border-white/20 transform transition-transform duration-300 z-50 max-w-xs md:max-w-sm ${
+          className={`fixed top-5 right-5 px-4 py-3 md:px-5 md:py-4 rounded-lg backdrop-blur-md border transform transition-transform duration-300 z-50 max-w-xs md:max-w-sm ${
+            isDarkMode
+              ? "bg-black/80 text-white border-white/20"
+              : "bg-white/90 text-gray-800 border-gray-300"
+          } ${
             notification.type === "success"
-              ? "border-l-4 border-l-green-400"
-              : "border-l-4 border-l-red-500"
+              ? isDarkMode
+                ? "border-l-4 border-l-green-400"
+                : "border-l-4 border-l-green-600"
+              : isDarkMode
+              ? "border-l-4 border-l-red-500"
+              : "border-l-4 border-l-red-600"
           } ${notification.show ? "translate-x-0" : "translate-x-96"}`}
         >
           <div className="text-sm md:text-base">{notification.message}</div>

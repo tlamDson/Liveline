@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useTheme } from "../context/ThemeContext";
+import DarkModeToggle from "./DarkModeToggle";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -9,6 +11,7 @@ const Login = () => {
   const [error, setError] = useState("");
 
   const { login } = useAuth();
+  const { isDarkMode } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -31,85 +34,157 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-purple-700 flex items-center justify-center p-4">
-      <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-8 w-full max-w-md shadow-2xl">
-        <div className="text-center mb-8">
-          <div className="text-4xl mb-4">
-            <i className="fas fa-video text-white"></i>
-          </div>
-          <h1 className="text-2xl font-bold text-white mb-2">Welcome Back</h1>
-          <p className="text-white/80">Sign in to your account</p>
+    <div
+      className={`min-h-screen flex items-center justify-center p-4 transition-all duration-300 ${
+        isDarkMode
+          ? "bg-gradient-to-br from-gray-900 via-purple-900 to-indigo-900"
+          : "bg-white"
+      }`}
+    >
+      <div className="w-full max-w-md">
+        {/* Dark Mode Toggle */}
+        <div className="flex justify-end mb-4">
+          <DarkModeToggle />
         </div>
 
-        {error && (
-          <div className="bg-red-500/20 border border-red-500/30 rounded-lg p-3 mb-6">
-            <p className="text-red-200 text-sm text-center">{error}</p>
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label
-              htmlFor="email"
-              className="block text-white/90 text-sm font-medium mb-2"
+        <div
+          className={`backdrop-blur-md border rounded-2xl p-8 shadow-2xl transition-all duration-300 ${
+            isDarkMode
+              ? "bg-white/10 border-white/20"
+              : "bg-gray-50/80 border-gray-200"
+          }`}
+        >
+          <div className="text-center mb-8">
+            <div className="text-4xl mb-4">
+              <i
+                className={`fas fa-video ${
+                  isDarkMode ? "text-white" : "text-indigo-600"
+                }`}
+              ></i>
+            </div>
+            <h1
+              className={`text-2xl font-bold mb-2 ${
+                isDarkMode ? "text-white" : "text-gray-800"
+              }`}
             >
-              Email
-            </label>
-            <input
-              type="email"
-              id="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/60 focus:outline-none focus:border-white/40 focus:bg-white/20 transition-all"
-              placeholder="Enter your email"
-            />
-          </div>
-
-          <div>
-            <label
-              htmlFor="password"
-              className="block text-white/90 text-sm font-medium mb-2"
-            >
-              Password
-            </label>
-            <input
-              type="password"
-              id="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/60 focus:outline-none focus:border-white/40 focus:bg-white/20 transition-all"
-              placeholder="Enter your password"
-            />
+              Welcome Back
+            </h1>
+            <p className={isDarkMode ? "text-white/80" : "text-gray-600"}>
+              Sign in to your account
+            </p>
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3 bg-white/20 hover:bg-white/30 text-white font-semibold rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed border border-white/20 hover:border-white/40"
-          >
-            {loading ? (
-              <div className="flex items-center justify-center">
-                <div className="animate-spin rounded-full h-5 w-5 border-2 border-white/30 border-t-white mr-2"></div>
-                Signing in...
-              </div>
-            ) : (
-              "Sign In"
-            )}
-          </button>
-        </form>
-
-        <div className="mt-6 text-center">
-          <p className="text-white/80">
-            Don't have an account?{" "}
-            <Link
-              to="/register"
-              className="text-white font-semibold hover:text-white/80 transition-colors"
+          {error && (
+            <div
+              className={`border rounded-lg p-3 mb-6 transition-all duration-300 ${
+                isDarkMode
+                  ? "bg-red-500/20 border-red-500/30"
+                  : "bg-red-50 border-red-200"
+              }`}
             >
-              Sign up
-            </Link>
-          </p>
+              <p
+                className={`text-sm text-center ${
+                  isDarkMode ? "text-red-200" : "text-red-800"
+                }`}
+              >
+                {error}
+              </p>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div>
+              <label
+                htmlFor="email"
+                className={`block text-sm font-medium mb-2 ${
+                  isDarkMode ? "text-white/90" : "text-gray-700"
+                }`}
+              >
+                Email
+              </label>
+              <input
+                type="email"
+                id="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className={`w-full px-4 py-3 border rounded-lg transition-all duration-300 
+                  focus:outline-none focus:ring-2 ${
+                    isDarkMode
+                      ? "bg-white/10 border-white/20 text-white placeholder-white/60 focus:border-white/40 focus:bg-white/20 focus:ring-white/20"
+                      : "bg-white border-gray-300 text-gray-800 placeholder-gray-400 focus:border-indigo-500 focus:ring-indigo-200"
+                  }`}
+                placeholder="Enter your email"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="password"
+                className={`block text-sm font-medium mb-2 ${
+                  isDarkMode ? "text-white/90" : "text-gray-700"
+                }`}
+              >
+                Password
+              </label>
+              <input
+                type="password"
+                id="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className={`w-full px-4 py-3 border rounded-lg transition-all duration-300 
+                  focus:outline-none focus:ring-2 ${
+                    isDarkMode
+                      ? "bg-white/10 border-white/20 text-white placeholder-white/60 focus:border-white/40 focus:bg-white/20 focus:ring-white/20"
+                      : "bg-white border-gray-300 text-gray-800 placeholder-gray-400 focus:border-indigo-500 focus:ring-indigo-200"
+                  }`}
+                placeholder="Enter your password"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className={`w-full py-3 font-semibold rounded-lg transition-all duration-300 
+                disabled:opacity-50 disabled:cursor-not-allowed border ${
+                  isDarkMode
+                    ? "bg-white/20 hover:bg-white/30 text-white border-white/20 hover:border-white/40"
+                    : "bg-indigo-600 hover:bg-indigo-700 text-white border-indigo-600"
+                }`}
+            >
+              {loading ? (
+                <div className="flex items-center justify-center">
+                  <div
+                    className={`animate-spin rounded-full h-5 w-5 border-2 mr-2 ${
+                      isDarkMode
+                        ? "border-white/30 border-t-white"
+                        : "border-white/30 border-t-white"
+                    }`}
+                  ></div>
+                  Signing in...
+                </div>
+              ) : (
+                "Sign In"
+              )}
+            </button>
+          </form>
+
+          <div className="mt-6 text-center">
+            <p className={isDarkMode ? "text-white/80" : "text-gray-600"}>
+              Don't have an account?{" "}
+              <Link
+                to="/register"
+                className={`font-semibold transition-colors ${
+                  isDarkMode
+                    ? "text-white hover:text-white/80"
+                    : "text-indigo-600 hover:text-indigo-800"
+                }`}
+              >
+                Sign up
+              </Link>
+            </p>
+          </div>
         </div>
       </div>
     </div>
