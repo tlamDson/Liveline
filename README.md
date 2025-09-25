@@ -1,4 +1,4 @@
-# 📹 Video Calling App
+# 📹 Liveline
 
 A modern video calling application built with React, Node.js, Socket.io, and WebRTC. Features real-time video/audio communication, chat messaging, user authentication, and dark/light mode interface.
 
